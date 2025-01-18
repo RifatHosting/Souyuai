@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Chat</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <style>
+        /* Base Variables */
+        :root {
+            --primary: #ffffff;
+            --secondary: #f8f8f8;
+            --text: #2c2c2c;
+            --text-light: #666666;
+            --border: #e5e5e5;
+            --shadow: rgba(0, 0, 0, 0.05);
+            --max-width: 900px;
+            --sidebar-width: 300px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-mono: 'SF Mono', SFMono-Regular, ui-monospace, Monaco, monospace;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--primary);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-light);
+            border-radius: 3px;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            background: var(--secondary);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--secondary);
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+        }
+
+        blockquote {
+            border-left: 3px solid var(--text);
+            padding-left: 1rem;
+            margin: 1.5rem 0;
+            font-style: italic;
+            color: var(--text-light);
+        }
+
+        /* Layout Components */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background: var(--primary);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .main-container {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        /* Message Styles */
+        .message-row {
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        .message-content {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--primary);
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .message-row.ai .message-content {
+            background: var(--secondary);
+        }
+
+        .avatar img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+        }
+
+        .message-text {
+            flex: 1;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Button Styles */
+        .button {
+            padding: 0.75rem 1.25rem;
+            background: var(--primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .button:hover {
+            background: var(--secondary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        /* Input Area */
+        .input-container {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            background: var(--primary);
+        }
+
+        .input-wrapper {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .input-box {
+            flex: 1;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            resize: none;
+            transition: var(--transition);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .input-box:focus {
+            outline: none;
+            border-color: var(--text);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        /* E-book Modal */
+        .ebook-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+        }
+
+        .ebook-content {
+            max-width: var(--max-width);
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            height: calc(100vh - 4rem);
+            overflow-y: auto;
+            box-shadow: 0 4px 16px var(--shadow);
+        }
+
+        .ebook-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .ebook-entry {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--primary);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 1.5rem;
+            background: var(--text);
+            color: var(--primary);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow);
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 100%;
+                --max-width: 100%;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1000;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-container {
+                margin-left: 0;
+            }
+
+            .message-content {
+                flex-direction: column;
+                margin: 0.5rem;
+            }
+
+            .input-wrapper {
+                padding: 0 0.5rem;
+            }
+
+            .ebook-content {
+                margin: 1rem;
+                padding: 1rem;
+            }
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #1a1a1a;
+                --secondary: #252525;
+                --text: #e5e5e5;
+                --text-light: #999999;
+                --border: #333333;
+                --shadow: rgba(0, 0, 0, 0.2);
+            }
+
+            .ebook-modal {
+                background: rgba(26, 26, 26, 0.98);
+            }
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="/api/placeholder/32/32" alt="AI Assistant">
+            <h1>Chat</h1>
+        </div>
+        <button class="button new-chat-btn">
+            <i class="fas fa-plus"></i>
+            Chat Baru
+        </button>
+    </aside>
+
+    <main class="main-container">
+        <header class="header">
+            <h2>Souyuai</h2>
+            <button class="button" onclick="toggleEbook()">
+                <i class="fas fa-book"></i>
+                E-Book
+            </button>
+        </header>
+
+        <div class="messages-container" id="messages"></div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="userText" 
+                    class="input-box" 
+                    placeholder="Ketik pesan Anda..." 
+                    rows="1"
+                ></textarea>
+                <button class="button send-button">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <div class="ebook-modal" id="ebookModal" style="display: none;">
+        <div class="ebook-content">
+            <div class="ebook-header">
+                <h2>E-Book Collection</h2>
+                <button class="button" onclick="toggleEbook()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="ebookEntries"></div>
+        </div>
+    </div>
+
+    <script>
+        function formatAIResponse(text) {
+            return text
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$2</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/^\s*[-*+]\s+(.+)/gm, '<li>$1</li>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^>\s(.+)/gm, '<blockquote>$1</blockquote>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+        }
+
+        function createMessageElement(sender, text) {
+            const messageRow = document.createElement('div');
+            messageRow.className = `message-row ${sender}`;
+
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = `<img src="/api/placeholder/32/32" alt="${sender === 'ai' ? 'AI' : 'User'}">`;
+
+            const messageText = document.createElement('div');
+            messageText.className = 'message-text';
+
+            if (sender === 'ai') {
+                const aiResponse = document.createElement('div');
+                aiResponse.className = 'ai-response';
+                
+                new Typed(aiResponse, {
+                    strings: [formatAIResponse(text)],
+                    typeSpeed: 20,
+                    showCursor: false,
+                    onComplete: (self) => {
+                        messageText.innerHTML += `
+                            <div class="message-actions">
+                                <button class="button" onclick="addToEbook(this.closest('.message-row'))">
+                                    <i class="fas fa-bookmark"></i> Simpan ke E-book
+                                </button>
+                                <button class="button" onclick="copyText(this.closest('.message-row'))">
+                                    <i class="fas fa-copy"></i> Salin
+                                </button>
+                            </div>`;
+                    }
+                });
+                
+                messageText.appendChild(aiResponse);
+            } else {
+                messageText.innerHTML = `<p>${text}</p>`;
+            }
+
+            messageContent.appendChild(avatar);
+            messageContent.appendChild(messageText);
+            messageRow.appendChild(messageContent);
+
+            return messageRow;
+        }
+
+        function showTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'message-row ai typing';
+            indicator.innerHTML = `
+                <div class="message-content">
+                    <div class="avatar">
+                        <img src="/api/placeholder/32/32" alt="AI">
+                    </div>
+                    <div class="typing-animation">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;document.getElementById('messages').appendChild(indicator);
+            return indicator;
+        }
+
+        async function sendMessage() {
+            const textarea = document.getElementById('userText');
+            const userText = textarea.value.trim();
+            if (!userText) return;
+
+            textarea.value = '';
+            textarea.style.height = '';
+            
+            const userMessage = createMessageElement('user', userText);
+            document.getElementById('messages').appendChild(userMessage);
+            
+            const typingIndicator = showTypingIndicator();
+            
+            try {
+                const response = await fetch(`https://restapi.apibotwa.biz.id/api/gptlogic?message=${encodeURIComponent(userText)}&prompt=${encodeURIComponent(prompt)}`);
+                
+                if (!response.ok) {
+                    throw new Error('API tidak merespon dengan benar');
+                }
+                
+                const data = await response.json();
+                typingIndicator.remove();
+
+                const aiMessage = data?.data?.response || "Maaf, saya tidak dapat memahami pesan Anda.";
+                const aiMessageElement = createMessageElement('ai', aiMessage);
+                document.getElementById('messages').appendChild(aiMessageElement);
+
+            } catch (error) {
+                console.error("Error:", error);
+                typingIndicator.remove();
+                
+                const errorMessage = createMessageElement('ai', 
+                    "Maaf, terjadi kesalahan dalam memproses pesan Anda. Silakan coba lagi nanti.");
+                document.getElementById('messages').appendChild(errorMessage);
+            }
+
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function toggleEbook() {
+            const modal = document.getElementById('ebookModal');
+            modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+            if (modal.style.display === 'block') {
+                updateEbookEntries();
+            }
+        }
+
+        function addToEbook(messageRow) {
+            const text = messageRow.querySelector('.ai-response').innerHTML;
+            const timestamp = new Date().toLocaleString('id-ID');
+            
+            const ebookEntries = JSON.parse(localStorage.getItem('ebookEntries') || '[]');
+            ebookEntries.push({ text, timestamp });
+            localStorage.setItem('ebookEntries', JSON.stringify(ebookEntries));
+            
+            showNotification('Berhasil disimpan ke E-book!');
+            updateEbookEntries();
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification animate__animated animate__fadeInUp';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.replace('animate__fadeInUp', 'animate__fadeOutDown');
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        function updateEbookEntries() {
+            const entries = JSON.parse(localStorage.getItem('ebookEntries') || '[]');
+            const container = document.getElementById('ebookEntries');
+            
+            container.innerHTML = entries.map((entry, index) => `
+                <div class="ebook-entry animate__animated animate__fadeIn">
+                    <div class="ai-response">${entry.text}</div>
+                    <div class="entry-footer">
+                        <small>Disimpan pada: ${entry.timestamp}</small>
+                        <button class="button" onclick="deleteEbookEntry(${index})">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteEbookEntry(index) {
+            const entries = JSON.parse(localStorage.getItem('ebookEntries') || '[]');
+            entries.splice(index, 1);
+            localStorage.setItem('ebookEntries', JSON.stringify(entries));
+            updateEbookEntries();
+            showNotification('Entri berhasil dihapus');
+        }
+
+        function copyText(messageRow) {
+            const text = messageRow.querySelector('.ai-response').textContent;
+            navigator.clipboard.writeText(text)
+                .then(() => showNotification('Teks berhasil disalin!'))
+                .catch(err => {
+                    console.error('Gagal menyalin teks:', err);
+                    showNotification('Gagal menyalin teks');
+                });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const userName = "Pengguna";
+            const now = new Date();
+            const jam = now.getHours().toString().padStart(2, '0') + ":" + 
+                       now.getMinutes().toString().padStart(2, '0');
+            const hariIni = now.toLocaleDateString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const prompt = `# Selamat datang, ${userName}! 👋
+
+Saya Souyuai Assistant yang siap membantu Anda dalam berbagai hal. 
+
+**Waktu saat ini:**
+- Jam: ${jam}
+- Tanggal: ${hariIni}
+
+Silakan ajukan pertanyaan atau minta bantuan apa pun yang Anda butuhkan. Saya akan berusaha memberikan jawaban yang terstruktur dan mudah dipahami.`;
+            
+            const welcomeMessage = createMessageElement('ai', prompt);
+            document.getElementById('messages').appendChild(welcomeMessage);
+
+            const textarea = document.getElementById('userText');
+            
+            textarea.addEventListener('input', function() {
+                this.style.height = '';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            document.querySelector('.send-button').addEventListener('click', sendMessage);
+            
+            document.querySelector('.new-chat-btn').addEventListener('click', () => {
+                document.getElementById('messages').innerHTML = '';
+                const welcomeMessage = createMessageElement('ai', prompt);
+                document.getElementById('messages').appendChild(welcomeMessage);
+                
+                if (window.innerWidth <= 768) {
+                    document.querySelector('.sidebar').classList.remove('active');
+                }
+            });
+        });
+
+        // Handle mobile menu
+        document.addEventListener('click', (e) => {
+            const sidebar = document.querySelector('.sidebar');
+            if (window.innerWidth <= 768 && 
+                sidebar.classList.contains('active') && 
+                !sidebar.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
